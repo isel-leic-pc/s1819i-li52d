@@ -1,4 +1,4 @@
-package pt.isel.pc.examples;
+package pt.isel.pc.examples.intro;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ public class SafetyHazards {
     public void missing_increments() throws InterruptedException {
         int nOfReps = 2000;
         int nOfThreads = 20;
-        List<Thread> ths = new LinkedList();
+        List<Thread> ths = new LinkedList<>();
         for (int i = 0; i < nOfThreads; ++i) {
             Thread th = new Thread(() -> {
                 for (int j = 0; j < nOfReps; ++j) {
@@ -41,7 +41,7 @@ public class SafetyHazards {
         int nOfReps = 2000;
         int nOfUrls = 20;
         int nOfThreads = 20;
-        List<Thread> ths = new LinkedList();
+        List<Thread> ths = new LinkedList<>();
         for (int i = 0; i < nOfThreads; ++i) {
             Thread th = new Thread(() -> {
                 for (int j = 0; j < nOfReps; ++j) {
