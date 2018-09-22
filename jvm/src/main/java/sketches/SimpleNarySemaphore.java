@@ -2,25 +2,23 @@ package sketches;
 
 import pt.isel.pc.examples.utils.Timeouts;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-
-public class SimpleSemaphore {
+public class SimpleNarySemaphore {
 
     private int units;
 
-    public SimpleSemaphore(int initial) {
+    public SimpleNarySemaphore(int initial) {
         units = initial;
     }
 
     // synchronized over this
-    synchronized public boolean tryAcquire(long timeoutInMs) throws InterruptedException {
+    synchronized public boolean tryAcquire(int requestedUnits, long timeoutInMs) throws InterruptedException {
 
         // fast path
-        if (units > 0) {
-            units -= 1;
+        if (units >= requestedUnits) {
+            units -= requestedUnits;
             return true;
         }
+
         // should wait or not?
         if (Timeouts.noWait(timeoutInMs)) {
             return false;
@@ -30,17 +28,13 @@ public class SimpleSemaphore {
         long limit = Timeouts.start(timeoutInMs);
         long remainingInMs = Timeouts.remaining(limit);
         while (true) {
-            try {
-                this.wait(remainingInMs);
-            } catch (InterruptedException ex) {
-                // So that notifications are not lost
-                if (units > 0) {
-                    notify();
-                }
-                throw ex;
-            }
-            if (units > 0) {
-                units -= 1;
+
+            // no interrupt cancellation processing needed
+            // due to the notifyAll
+            this.wait(remainingInMs);
+
+            if (units >= requestedUnits) {
+                units -= requestedUnits;
                 return true;
             }
             remainingInMs = Timeouts.remaining(limit);
@@ -52,8 +46,8 @@ public class SimpleSemaphore {
     }
 
     // synchronized over this
-    synchronized public void release() {
-        units += 1;
-        this.notify();
+    synchronized public void release(int releasedUnits) {
+        units += releasedUnits;
+        this.notifyAll();
     }
 }
