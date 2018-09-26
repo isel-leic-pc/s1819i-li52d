@@ -51,7 +51,6 @@ public class FifoSemaphore {
                     notifyIfNeeded();
                     return false;
                 }
-                notifyIfNeeded();
             }
         }
     }
@@ -65,7 +64,7 @@ public class FifoSemaphore {
 
     private void notifyIfNeeded() {
         if (!q.isEmpty() && units >= q.getHeadValue()) {
-            mon.notify();
+            mon.notifyAll();
         }
     }
 }
