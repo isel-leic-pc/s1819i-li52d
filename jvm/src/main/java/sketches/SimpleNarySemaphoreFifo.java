@@ -1,13 +1,15 @@
 package sketches;
 
+import pt.isel.pc.examples.utils.NodeLinkedList;
 import pt.isel.pc.examples.utils.Timeouts;
 
-public class SimpleNarySemaphore implements NarySemaphore {
+public class SimpleNarySemaphoreFifo implements NarySemaphore {
 
     private int units;
     private final Object monitor = new Object();
+    private final NodeLinkedList<Integer> q = new NodeLinkedList<>();
 
-    public SimpleNarySemaphore(int initial) {
+    public SimpleNarySemaphoreFifo(int initial) {
         units = initial;
     }
 
@@ -16,7 +18,7 @@ public class SimpleNarySemaphore implements NarySemaphore {
 
         synchronized (monitor) {
             // fast path
-            if (units >= requestedUnits) {
+            if (q.isEmpty() && units >= requestedUnits) {
                 units -= requestedUnits;
                 return true;
             }
@@ -27,21 +29,29 @@ public class SimpleNarySemaphore implements NarySemaphore {
             }
 
             // prepare everything for waiting
+            NodeLinkedList.Node<Integer> node = q.push(requestedUnits);
             long limit = Timeouts.start(timeoutInMs);
             long remainingInMs = Timeouts.remaining(limit);
+
             while (true) {
+                try {
+                    monitor.wait(remainingInMs);
+                }catch(InterruptedException e) {
+                    q.remove(node);
+                    notifyIfNeeded();
+                    throw e;
+                }
 
-                // no interrupt cancellation processing needed
-                // due to the notifyAll
-                monitor.wait(remainingInMs);
-
-                if (units >= requestedUnits) {
+                if (q.isHeadNode(node) && units >= requestedUnits) {
                     units -= requestedUnits;
+                    q.remove(node);
+                    notifyIfNeeded();
                     return true;
                 }
                 remainingInMs = Timeouts.remaining(limit);
                 if (Timeouts.isTimeout(remainingInMs)) {
-                    // no cancellation processing needed
+                    q.remove(node);
+                    notifyIfNeeded();
                     return false;
                 }
             }
@@ -52,6 +62,12 @@ public class SimpleNarySemaphore implements NarySemaphore {
     public void release(int releasedUnits) {
         synchronized (monitor) {
             units += releasedUnits;
+            notifyIfNeeded();
+        }
+    }
+
+    private void notifyIfNeeded () {
+        if(!q.isEmpty() && units >= q.getHeadValue()) {
             monitor.notifyAll();
         }
     }
