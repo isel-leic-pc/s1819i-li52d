@@ -1,5 +1,6 @@
 package sketches;
 
+import pt.isel.pc.examples.synchronizers.NarySemaphore;
 import pt.isel.pc.examples.utils.NodeLinkedList;
 import pt.isel.pc.examples.utils.Timeouts;
 

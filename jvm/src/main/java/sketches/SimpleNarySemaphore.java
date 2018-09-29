@@ -1,5 +1,6 @@
 package sketches;
 
+import pt.isel.pc.examples.synchronizers.NarySemaphore;
 import pt.isel.pc.examples.utils.Timeouts;
 
 public class SimpleNarySemaphore implements NarySemaphore {

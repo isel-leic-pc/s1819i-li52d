@@ -1,6 +1,5 @@
-package sketches;
+package pt.isel.pc.examples.synchronizers;
 
-import pt.isel.pc.examples.synchronizers.NarySemaphore;
 import pt.isel.pc.examples.utils.NodeLinkedList;
 import pt.isel.pc.examples.utils.Timeouts;
 
@@ -9,12 +8,13 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SimpleNarySemaphoreFifoWithExplicitMonitors
+public class SimpleNarySemaphoreFifoWithExplicitMonitorsAndExecutionDelegation
         implements NarySemaphore {
 
     private static class Request {
         public final int requestedUnits;
         public final Condition condition;
+        public boolean isDone = false;
 
         public Request(int requestedUnits, Condition condition) {
 
@@ -27,7 +27,8 @@ public class SimpleNarySemaphoreFifoWithExplicitMonitors
     private final Lock monitor = new ReentrantLock();
     private final NodeLinkedList<Request> q = new NodeLinkedList<>();
 
-    public SimpleNarySemaphoreFifoWithExplicitMonitors(int initial) {
+    public SimpleNarySemaphoreFifoWithExplicitMonitorsAndExecutionDelegation(int initial) {
+
         units = initial;
     }
 
@@ -56,21 +57,30 @@ public class SimpleNarySemaphoreFifoWithExplicitMonitors
             long remainingInMs = Timeouts.remaining(limit);
 
             while (true) {
-                node.value.condition.await(remainingInMs, TimeUnit.MILLISECONDS);
-                if (q.isHeadNode(node) && units >= requestedUnits) {
-                    units -= requestedUnits;
+                try {
+                    node.value.condition.await(remainingInMs, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    if (node.value.isDone) {
+                        // restore interrupted status and leave without exception
+                        Thread.currentThread().interrupt();
+                        return true;
+                    }
+                    q.remove(node);
+                    notifyIfNeeded();
+                    throw e;
+                }
+                if (node.value.isDone) {
+                    // if isDone is true, then all the leave processing is already done
                     return true;
                 }
                 remainingInMs = Timeouts.remaining(limit);
                 if (Timeouts.isTimeout(remainingInMs)) {
+                    q.remove(node);
+                    notifyIfNeeded();
                     return false;
                 }
             }
         } finally {
-            if (node != null) {
-                q.remove(node);
-                notifyIfNeeded();
-            }
             monitor.unlock();
         }
     }
@@ -87,8 +97,16 @@ public class SimpleNarySemaphoreFifoWithExplicitMonitors
     }
 
     private void notifyIfNeeded() {
-        if (!q.isEmpty() && units >= q.getHeadValue().requestedUnits) {
-            q.getHeadValue().condition.signal();
+        while (!q.isEmpty() && units >= q.getHeadValue().requestedUnits) {
+            // The signaling thread does the processing
+            // - remove the units
+            // - and remove from queue
+            // on behalf of the signaled thread
+            NodeLinkedList.Node<Request> node = q.pull();
+            node.value.isDone = true;
+            node.value.condition.signal();
+            units -= node.value.requestedUnits;
         }
     }
+
 }

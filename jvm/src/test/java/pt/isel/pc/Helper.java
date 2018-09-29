@@ -7,15 +7,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static org.junit.Assert.assertFalse;
 
 public class Helper {
+
     @FunctionalInterface
-    public interface InterruptableRunnable {
+    public interface InterruptibleRunnable {
         void run() throws InterruptedException;
     }
 
     private List<Thread> ths = new LinkedList<>();
     private ConcurrentLinkedQueue<AssertionError> errors = new ConcurrentLinkedQueue<>();
 
-    public void createAndStart(InterruptableRunnable runnable) {
+    public void createAndStart(InterruptibleRunnable runnable) {
         Thread th = new Thread(() -> {
             try {
                 runnable.run();
@@ -34,6 +35,15 @@ public class Helper {
             th.interrupt();
             th.join(2000);
             assertFalse("thread should have stopped", th.isAlive());
+        }
+        if(!errors.isEmpty()) {
+            throw errors.peek();
+        }
+    }
+
+    public void join() throws InterruptedException {
+        for (Thread th : ths) {
+            th.join();
         }
         if(!errors.isEmpty()) {
             throw errors.peek();

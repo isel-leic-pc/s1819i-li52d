@@ -1,4 +1,4 @@
-package sketches;
+package pt.isel.pc.examples.synchronizers;
 
 public interface NarySemaphore {
 

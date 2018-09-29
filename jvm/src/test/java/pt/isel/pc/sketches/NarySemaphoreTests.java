@@ -2,13 +2,10 @@ package pt.isel.pc.sketches;
 
 import org.junit.Test;
 import pt.isel.pc.Helper;
-import sketches.NarySemaphore;
+import pt.isel.pc.examples.synchronizers.NarySemaphore;
 import sketches.SimpleNarySemaphoreFifoWithExplicitMonitors;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertTrue;
