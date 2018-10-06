@@ -1,5 +1,7 @@
 package pt.isel.pc;
 
+import sun.jvm.hotspot.utilities.AssertionFailure;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -10,11 +12,12 @@ public class Helper {
 
     @FunctionalInterface
     public interface InterruptibleRunnable {
-        void run() throws InterruptedException;
+        void run() throws Exception;
     }
 
     private List<Thread> ths = new LinkedList<>();
-    private ConcurrentLinkedQueue<AssertionError> errors = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<AssertionError> failures = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<Exception> errors = new ConcurrentLinkedQueue<>();
 
     public void createAndStart(InterruptibleRunnable runnable) {
         Thread th = new Thread(() -> {
@@ -23,6 +26,8 @@ public class Helper {
             }catch (InterruptedException e) {
                 // ignore
             }catch(AssertionError e) {
+                failures.add(e);
+            }catch(Exception e) {
                 errors.add(e);
             }
         });
@@ -36,8 +41,11 @@ public class Helper {
             th.join(2000);
             assertFalse("thread should have stopped", th.isAlive());
         }
+        if(!failures.isEmpty()) {
+            throw failures.peek();
+        }
         if(!errors.isEmpty()) {
-            throw errors.peek();
+            throw new UnexpectedExceptionError(errors.peek());
         }
     }
 
@@ -45,8 +53,11 @@ public class Helper {
         for (Thread th : ths) {
             th.join();
         }
+        if(!failures.isEmpty()) {
+            throw failures.peek();
+        }
         if(!errors.isEmpty()) {
-            throw errors.peek();
+            throw new UnexpectedExceptionError(errors.peek());
         }
     }
 

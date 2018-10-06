@@ -1,5 +1,6 @@
 package sketches;
 
+import pt.isel.pc.examples.synchronizers.ReaderWriterLock;
 import pt.isel.pc.examples.utils.Batch;
 import pt.isel.pc.examples.utils.NodeLinkedList;
 import pt.isel.pc.examples.utils.Timeouts;
@@ -9,7 +10,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ReaderWriterLockWithBatch {
+public class ReaderWriterLockWithBatch implements ReaderWriterLock {
 
     private static class WriteRequest {
         public boolean wasAllowed;
@@ -116,6 +117,16 @@ public class ReaderWriterLockWithBatch {
         }
     }
 
+    @Override
+    public void startRead() throws InterruptedException {
+        startRead(Long.MAX_VALUE);
+    }
+
+    @Override
+    public void startWrite() throws InterruptedException {
+        startWrite(Long.MAX_VALUE);
+    }
+
     public void endRead() {
         try {
             mon.lock();
@@ -150,6 +161,11 @@ public class ReaderWriterLockWithBatch {
         } finally {
             mon.unlock();
         }
+    }
+
+    @Override
+    public void decorate(ERunnable runnable) {
+        throw new UnsupportedOperationException();
     }
 
 }
