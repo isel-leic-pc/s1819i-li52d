@@ -12,6 +12,7 @@ namespace Examples
         private int units;
 
         private readonly LinkedList<int> q = new LinkedList<int>();
+        private readonly object mutex = new object();
 
         public SemaphoreFifo(int initial)
         {
@@ -20,7 +21,7 @@ namespace Examples
 
         public bool Acquire(int requestedUnits, int timeout)
         {
-            lock (this)
+            lock (mutex)
             {
                 if (units >= requestedUnits && q.Count == 0)
                 {
@@ -33,7 +34,7 @@ namespace Examples
                 {                     
                     try
                     {
-                        SyncUtils.Wait(this, node, limit.Remaining);
+                        SyncUtils.Wait(mutex, node, limit.Remaining);
                     }
                     catch (ThreadInterruptedException)
                     {
@@ -61,7 +62,7 @@ namespace Examples
 
         public void Release(int releasedUnits)
         {
-            lock (this)
+            lock (mutex)
             {
                 units += releasedUnits;
                 NotifyIfNeeded();
@@ -72,7 +73,7 @@ namespace Examples
         {
             if (q.Count > 0 && units >= q.First.Value)
             {
-                SyncUtils.Notify(this, q.First);                
+                SyncUtils.Notify(mutex, q.First);                
             }
         }
     }

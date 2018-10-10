@@ -14,6 +14,7 @@ namespace Examples
             if(mlock == condition)
             {
                 Monitor.Wait(mlock, timeout);
+                return;
             }            
             Monitor.Enter(condition);
             Monitor.Exit(mlock);
@@ -58,7 +59,7 @@ namespace Examples
         {
             if (mlock == condition)
             {
-                Monitor.Pulse(mlock);
+                Monitor.PulseAll(mlock);
                 return;
             }
             bool wasInterrupted;
