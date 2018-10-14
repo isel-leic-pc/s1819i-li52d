@@ -35,6 +35,10 @@ public class NodeLinkedList<T> {
         return head == head.prev;
     }
 
+    public boolean isNotEmpty() {
+        return !isEmpty();
+    }
+
     public T getHeadValue() {
         if(isEmpty()) {
             throw new IllegalStateException("cannot get head of an empty list");
