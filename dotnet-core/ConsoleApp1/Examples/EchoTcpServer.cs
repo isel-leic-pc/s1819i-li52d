@@ -3,12 +3,14 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using ConsoleApp1.Logging;
 
 namespace ConsoleApp1.Examples
 {    
-
     class EchoTcpServer
     {
+        private static readonly ILog Log = LogProvider.For<EchoTcpServer>(); 
+        
         private readonly Terminator terminator = new Terminator();
 
         public async Task Start(int port, CancellationToken ctoken)
@@ -21,19 +23,19 @@ namespace ConsoleApp1.Examples
             // AcceptTcpClientAsync
             using (ctoken.Register(() =>
             {
-                Console.WriteLine("stopping listener");
+                Log.Info("stopping listener");
                 listener.Stop();
             }))
             {
                 try
                 {
                     listener.Start();
-                    Console.WriteLine($"listening on {port}");
+                    Log.Info($"listening on {port}");
                     for (; !ctoken.IsCancellationRequested;)
                     {
-                        Console.WriteLine("accepting...");
+                        Log.Info("accepting...");
                         var client = await listener.AcceptTcpClientAsync();
-                        Console.WriteLine("...client accepted");
+                        Log.Info("...client accepted");
                         connectionId += 1;
                         Echo(client, ctoken, connectionId);
                     }
@@ -41,7 +43,7 @@ namespace ConsoleApp1.Examples
                 catch (Exception e)
                 {
                     // await AcceptTcpClientAsync will end up with an exception
-                    Console.WriteLine($"Exception '{e.Message}' received");
+                    Log.Info($"Exception '{e.Message}' received");
                 }
             }
 
@@ -64,10 +66,10 @@ namespace ConsoleApp1.Examples
                     try
                     {
                         var readBytes = await ReadFromStreamAsync(stream, buffer, ctoken, tcs.Task);
-                        Console.WriteLine($"[{connectionId}] read '{readBytes}' bytes");
+                        Log.Info($"[{connectionId}] read '{readBytes}' bytes");
                         if (readBytes == 0)
                         {
-                            Console.WriteLine($"[{connectionId}] ending.");
+                            Log.Info($"[{connectionId}] ending.");
                             return;
                         }
 
@@ -77,7 +79,7 @@ namespace ConsoleApp1.Examples
                     {
                         // This looses data if the read or write can cancelled
                         client.Close();
-                        Console.WriteLine($"[{connectionId}] cancelled: '{e}'");
+                        Log.Info($"[{connectionId}] cancelled: '{e}'");
                         return;
                     }
                 }
@@ -99,6 +101,8 @@ namespace ConsoleApp1.Examples
     // The example program
     class EchoTcpServerProgram
     {
+        private static readonly ILog Log = LogProvider.For<EchoTcpServerProgram>(); 
+        
         private static readonly CancellationTokenSource cts = new CancellationTokenSource();
         private static readonly Terminator terminator = new Terminator();
 
@@ -111,7 +115,7 @@ namespace ConsoleApp1.Examples
             using (terminator.Enter())
             {
                 await server.Start(8081, cts.Token);
-                Console.WriteLine("ending, bye");
+                Log.Info("ending, bye");
             }
         }
 
@@ -124,7 +128,7 @@ namespace ConsoleApp1.Examples
 
         private static void HandleProcessExit(object sender, EventArgs eventArgs)
         {
-            Console.WriteLine($"handling process exit");
+            Log.Info($"handling process exit");
             cts.Cancel();
             terminator.Shutdown().Wait();
         }
