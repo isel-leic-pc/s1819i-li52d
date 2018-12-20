@@ -20,7 +20,7 @@ namespace ConsoleApp1
 
         private static readonly ILog Logger = LogProvider.For<Program>();
         
-        static Task Main(string[] args)
+        static void Main(string[] args)
         {
             var log = new LoggerConfiguration()
                 .Enrich.WithThreadId()
@@ -43,7 +43,9 @@ namespace ConsoleApp1
             //Logger.Info($"Task status is '{t.Status}'");
             //Logger.Info("end");
 
-            return TcpServerExample.EchoServer();
+            // return TcpServerExample.EchoServer();
+            TestAsyncSemaphore.Run();
+            
         }
     }
 }

@@ -111,6 +111,7 @@ namespace ConsoleApp1.Examples
             AppDomain.CurrentDomain.ProcessExit += HandleProcessExit;
             Console.CancelKeyPress += HandleCancel;
 
+            Log.Info("starting server");
             EchoTcpServer server = new EchoTcpServer();
             using (terminator.Enter())
             {

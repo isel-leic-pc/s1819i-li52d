@@ -21,12 +21,12 @@ namespace ConsoleApp1.Sketches
             while (true)
             {
                 var client = await listener.AcceptTcpClientAsync();
-                Echo(client, id++);
+                EchoAsync(client, id++);
 
             }
         }
 
-        private static async Task Echo(TcpClient client, int id)
+        private static async Task EchoAsync(TcpClient client, int id)
         {
             Log.Info($"[{id}]: started echo ");
             var buffer = new byte[4 * 1024];
